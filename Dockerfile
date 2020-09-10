@@ -1,11 +1,14 @@
 FROM sirrkitt/dovecot-build-xapian as fts-xapian
-FROM alpine:3.11
+FROM alpine:3.12
 LABEL maintainer="Jacob Lemus Peschel <jacob@tlacuache.us>"
+
+COPY --from=fts-xapian /home/builder/packages/usr/x86_64/openldap*.apk /root/
 
 RUN	echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories &&\
 	echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories &&\
 	apk update --no-cache && \
 	apk add -U --no-cache dovecot dovecot-submissiond dovecot-ldap dovecot-lmtpd dovecot-pigeonhole-plugin dovecot-pigeonhole-plugin-ldap rspamd-client@edge && \
+	apk add --allow-untrusted /root/fts-xapian.apk && \
 	rm -r /etc/dovecot /etc/ssl/dovecot
 
 RUN	addgroup -S vmail && \
@@ -13,9 +16,6 @@ RUN	addgroup -S vmail && \
 	mkdir -p /config /mail /ssl /socket && \
 	chown -R vmail:vmail /mail && \
 	chown -R root:root /ssl /config /socket
-COPY --from=fts-xapian /usr/lib/dovecot/lib21_fts_xapian_plugin.a /usr/lib/dovecot/lib21_fts_xapian_plugin.a
-COPY --from=fts-xapian /usr/lib/dovecot/lib21_fts_xapian_plugin.la /usr/lib/dovecot/lib21_fts_xapian_plugin.la
-COPY --from=fts-xapian /usr/lib/dovecot/lib21_fts_xapian_plugin.so /usr/lib/dovecot/lib21_fts_xapian_plugin.so
 
 VOLUME ["/config", "/mail", "/ssl", "/socket"]
 
